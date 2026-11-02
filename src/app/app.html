@@ -1,0 +1,211 @@
+<div class="crypto-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">🔶</span>
+      <h2>Unikin Token</h2>
+    </div>
+
+    <nav class="sidebar-nav" *ngIf="walletAddress">
+      <button (click)="switchTab('dashboard')" [class.active]="activeTab === 'dashboard'" class="nav-item">📊 Tableau de bord</button>
+      <button (click)="switchTab('profile')" [class.active]="activeTab === 'profile'" class="nav-item">👤 Profil Étudiant</button>
+      <button (click)="switchTab('transfer')" [class.active]="activeTab === 'transfer'" class="nav-item">💸 Paiements & Transferts</button>
+      <button (click)="switchTab('faucet')" [class.active]="activeTab === 'faucet'" class="nav-item">🎁 Faucet (Testnet)</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="network-badge">● Réseau Sepolia Actif</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-header">
+      <div class="header-title">
+        <h3>Espace Décentralisé - {{ activeTab | uppercase }}</h3>
+      </div>
+      <div class="header-actions">
+        <button *ngIf="!walletAddress" (click)="connect()" class="btn-connect-top">🦊 Connecter MetaMask</button>
+        <div *ngIf="walletAddress" class="user-pill-group">
+          <span class="user-addr" title="{{ walletAddress }}">{{ walletAddress.substring(0, 6) }}...{{ walletAddress.substring(38) }}</span>
+          <button (click)="openAccountModal()" class="btn-switch-account">🔄 Changer de compte</button>
+        </div>
+      </div>
+    </header>
+
+    <div *ngIf="notification" [class]="'toast-notification ' + notification.type">
+      <div class="toast-content"><span class="toast-message">{{ notification.message }}</span></div>
+      <button (click)="notification = null" class="toast-close">×</button>
+    </div>
+
+    <!-- Modale de Changement de Compte -->
+    <div *ngIf="showAccountModal" class="modal-overlay">
+      <div class="modal-card">
+        <h3>🔄 Gestion des Comptes / Étudiants</h3>
+        <p class="modal-desc">Testez l'application avec un autre compte ou l'adresse d'un collègue :</p>
+        <div class="form-group">
+          <label>Adresse du compte (0x...) :</label>
+          <input type="text" [(ngModel)]="manualAddressInput" placeholder="0x..." class="form-control" />
+        </div>
+        <div class="modal-actions">
+          <button (click)="applyManualAddress()" class="btn-orange">Valider l'adresse</button>
+          <button (click)="connectMetaMaskAccount()" class="btn-meta">Demander via MetaMask</button>
+          <button (click)="closeAccountModal()" class="btn-cancel">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modale de Détails d'une Transaction (Clic sur une ligne) -->
+    <div *ngIf="selectedTransaction" class="modal-overlay">
+      <div class="modal-card">
+        <h3>🔍 Détails de la Transaction</h3>
+        <div class="tx-details-box">
+          <p><strong>Type :</strong> <span class="tx-badge" [class]="selectedTransaction.type">{{ selectedTransaction.type | uppercase }}</span></p>
+          <p><strong>Montant :</strong> {{ selectedTransaction.amount }} UKT</p>
+          <p><strong>De :</strong> <span class="mono">{{ selectedTransaction.from }}</span></p>
+          <p><strong>Vers :</strong> <span class="mono">{{ selectedTransaction.to }}</span></p>
+          <p><strong>Heure :</strong> {{ selectedTransaction.timestamp }}</p>
+          <p class="hash-text"><strong>Hash :</strong> {{ selectedTransaction.hash }}</p>
+        </div>
+        <div class="modal-actions">
+          <button (click)="closeTransactionDetails()" class="btn-orange">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modale pour voir TOUTES les activités du compte -->
+    <div *ngIf="showAllActivitiesModal" class="modal-overlay">
+      <div class="modal-card" style="width: 600px; max-width: 90%;">
+        <h3>📜 Toutes les Activités de {{ accountName }}</h3>
+        <p class="modal-desc">Historique complet enregistré sur la blockchain Sepolia :</p>
+        <div class="all-activities-list" style="max-height: 350px; overflow-y: auto;">
+          <div *ngIf="transactions.length === 0" class="empty-text">Aucune activité enregistrée.</div>
+          <div *ngFor="let tx of transactions" class="tx-row clickable" (click)="openTransactionDetails(tx)">
+            <span class="tx-badge" [class]="tx.type">{{ tx.type | uppercase }}</span>
+            <span class="tx-amt">{{ tx.amount }} UKT</span>
+            <span class="tx-time">{{ tx.timestamp }}</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button (click)="showAllActivitiesModal = false" class="btn-orange">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!walletAddress" class="hero-connect-card">
+      <div class="hero-icon">🦊</div>
+      <h2>Connexion à Unikin Token</h2>
+      <p>Veuillez connecter votre portefeuille MetaMask pour commencer.</p>
+      <button (click)="connect()" class="btn-orange-large">Connecter MetaMask</button>
+    </div>
+
+    <!-- Dashboard -->
+    <div *ngIf="walletAddress" class="dashboard-views">
+      <div *ngIf="activeTab === 'dashboard'" class="view-grid">
+        
+        <!-- Solde + Nom du compte affiché à côté -->
+        <div class="card balance-card">
+          <span class="card-label">Solde Total Disponible ({{ accountName }})</span>
+          <h1 class="balance-display">{{ balance }} <span class="currency">UKT</span></h1>
+          <span class="sub-text">Réseau Ethereum Sepolia</span>
+        </div>
+
+        <!-- Activité du compte cliquable pour tout voir -->
+        <div class="card stats-card clickable-card" (click)="showAllActivitiesModal = true" title="Cliquez pour voir toutes les activités">
+          <span class="card-label">Activité du Compte (Cliquer pour tout voir)</span>
+          <div class="stat-row">
+            <span>Statut :</span> <strong style="color: #16a34a;">Sécurisé & Connecté</strong>
+          </div>
+          <div class="stat-row">
+            <span>Opérations :</span> <strong>{{ transactions.length }} transactions</strong>
+          </div>
+        </div>
+
+        <!-- Graphique Temps Réel -->
+        <div class="card full-width-card chart-container">
+          <h3>📈 Évolution en temps réel des transactions (UKT)</h3>
+          <p class="chart-subtitle">Graphique alimenté par les données réelles de la blockchain</p>
+          <div *ngIf="transactions.length === 0" class="empty-chart-text">Aucune transaction pour le moment.</div>
+          <div *ngIf="transactions.length > 0" class="chart-bars">
+            <div *ngFor="let tx of transactions.slice(0, 5); let i = index" 
+                 class="bar" 
+                 [class.active-bar]="i === 0"
+                 [style.height]="getBarHeight(tx.amount)" 
+                 [title]="tx.amount + ' UKT (' + tx.type + ')'"
+                 (click)="openTransactionDetails(tx)">
+              <span>{{ tx.amount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historique récent (Cliquable pour voir les détails) -->
+        <div class="card full-width-card">
+          <h3>Historique récent des transactions (Cliquez sur une ligne pour voir les détails)</h3>
+          <div *ngIf="transactions.length === 0" class="empty-text">Aucune transaction enregistrée pour ce compte.</div>
+          <div *ngFor="let tx of transactions" class="tx-row clickable" (click)="openTransactionDetails(tx)">
+            <span class="tx-badge" [class]="tx.type">{{ tx.type | uppercase }}</span>
+            <span class="tx-amt">{{ tx.amount }} UKT</span>
+            <span class="tx-time">{{ tx.timestamp }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFIL ÉTUDIANT -->
+      <div *ngIf="activeTab === 'profile'" class="card single-card">
+        <h3>Enregistrement du Profil Étudiant</h3>
+        <div *ngIf="!isRegistered">
+          <div class="form-group">
+            <label>Nom complet :</label>
+            <input type="text" [(ngModel)]="studentName" placeholder="Ex: Makoko Sylvie" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Matricule :</label>
+            <input type="text" [(ngModel)]="studentMatricule" placeholder="Ex: 2026-UNIKIN" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label>Promotion :</label>
+            <input type="text" [(ngModel)]="studentLevel" class="form-control" />
+          </div>
+          <button (click)="registerStudent()" class="btn-orange">Enregistrer le profil</button>
+        </div>
+        <div *ngIf="isRegistered" class="profile-box">
+          <div class="success-tag">✔ Profil Enregistré</div>
+          <p><strong>Nom :</strong> {{ studentName }}</p>
+          <p><strong>Matricule :</strong> {{ studentMatricule }}</p>
+          <p><strong>Promotion :</strong> {{ studentLevel }}</p>
+        </div>
+      </div>
+
+      <!-- PAIEMENTS / TRANSFERTS (Photocopie, Bibliothèque, etc.) -->
+      <div *ngIf="activeTab === 'transfer'" class="card single-card">
+        <h3>Paiement & Transfert (Bibliothèque, Photocopies...)</h3>
+        <div class="form-group">
+          <label>Adresse du service / destinataire (0x...) :</label>
+          <input type="text" [(ngModel)]="recipientAddress" placeholder="0x..." class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Montant (UKT) :</label>
+          <input type="number" [(ngModel)]="transferAmount" placeholder="Ex: 5" class="form-control" />
+        </div>
+        <button (click)="sendTransfer()" class="btn-orange">Payer / Transférer les tokens</button>
+
+        <div *ngIf="lastResult && lastResult.type === 'send'" class="result-card">
+          <h4>✅ {{ lastResult.title }}</h4>
+          <p><strong>Montant :</strong> {{ lastResult.amount }}</p>
+          <p class="hash-text"><strong>Hash :</strong> {{ lastResult.hash }}</p>
+        </div>
+      </div>
+
+      <!-- FAUCET -->
+      <div *ngIf="activeTab === 'faucet'" class="card single-card text-center">
+        <h3>Faucet Testnet UKT</h3>
+        <p class="desc-text">Réclamez vos tokens de test (10 UKT par demande, délai de 2 minutes).</p>
+        <button (click)="claimFaucet()" class="btn-orange-large">🎁 Réclamer le Faucet</button>
+
+        <div *ngIf="lastResult && lastResult.type === 'faucet'" class="result-card">
+          <h4>🎉 {{ lastResult.title }}</h4>
+          <p><strong>Montant reçu :</strong> {{ lastResult.amount }}</p>
+          <p class="hash-text"><strong>Hash :</strong> {{ lastResult.hash }}</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
