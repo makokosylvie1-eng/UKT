@@ -1,1 +1,97 @@
 /* You can add global styles to this file, and also import other style files */
+/* ==========================================
+   Styles Globaux & Design DApp (UKT)
+   ================================---------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #0f172a; /* Thème sombre moderne (Blue/Slate) */
+  color: #f8fafc;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Structure principale de l'application */
+app-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+}
+
+/* Conteneurs et cartes standards */
+.container, .card, .dashboard-card {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Boutons modernes */
+button {
+  cursor: pointer;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #1d4ed8;
+}
+
+/* ==========================================
+   Adaptation Responsive (Smartphones & Tablettes)
+   ================================---------- */
+@media (max-width: 768px) {
+  body {
+    padding: 5px;
+  }
+
+  /* Forcer les conteneurs et sections à s'adapter en colonne */
+  .container, .card, .dashboard-card, .app-layout {
+    flex-direction: column !important;
+    width: 100% !important;
+    padding: 10px !important;
+    box-sizing: border-box;
+  }
+
+  /* Rendre les barres latérales fluides sur mobile */
+  .sidebar, nav {
+    width: 100% !important;
+    height: auto !important;
+    position: relative !important;
+  }
+
+  /* Adapter les tableaux pour éviter les cassures de mise en page */
+  table, .table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Redimensionner les titres et adapter les boutons en pleine largeur */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.2rem !important;
+  }
+
+  button {
+    width: 100% !important;
+    margin-top: 5px;
+  }
+}
