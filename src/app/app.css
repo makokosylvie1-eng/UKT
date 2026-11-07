@@ -123,6 +123,11 @@ body {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-switch-account:hover { background: #e2e8f0; }
+
 .clickable {
   cursor: pointer;
   transition: background 0.2s;
@@ -151,9 +156,7 @@ body {
   font-size: 12px;
   color: #c2410c;
   word-break: break-all;
-}}
-
-.btn-switch-account:hover { background: #e2e8f0; }
+}
 
 .dashboard-views { display: flex; flex-direction: column; gap: 20px; }
 .view-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
@@ -332,3 +335,27 @@ body {
 .toast-notification.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 .toast-notification.info { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
 .toast-close { background: none; border: none; color: inherit; font-size: 18px; cursor: pointer; font-weight: bold; }
+
+/* Correction responsive mobile */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+  .crypto-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    box-sizing: border-box;
+  }
+  .main-content {
+    padding: 16px;
+  }
+  .view-grid {
+    grid-template-columns: 1fr;
+  }
+  .full-width-card {
+    grid-column: span 1;
+  }
+}

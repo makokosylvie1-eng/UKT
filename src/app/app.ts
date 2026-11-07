@@ -16,7 +16,6 @@ export class App {
   transactions: TransactionRecord[] = [];
   activeTab: string = 'dashboard';
 
-  // Gestion du nom du compte et des détails de transaction
   accountName: string = 'Étudiant UNIKIN';
   selectedTransaction: TransactionRecord | null = null;
   showAllActivitiesModal: boolean = false;
@@ -104,7 +103,7 @@ export class App {
       this.studentName = profile.name;
       this.studentMatricule = profile.matricule;
       this.studentLevel = profile.level;
-      this.accountName = profile.name; // Met à jour le nom du compte affiché
+      this.accountName = profile.name;
       this.isRegistered = true;
     } else {
       this.studentName = '';
@@ -125,7 +124,6 @@ export class App {
     return `${Math.min(Math.max(amt * 5, 20), 100)}%`;
   }
 
-  // Ouvre les détails d'une transaction spécifique au clic
   openTransactionDetails(tx: TransactionRecord) {
     this.selectedTransaction = tx;
   }
@@ -159,10 +157,10 @@ export class App {
   async claimFaucet() {
     try {
       const check = await this.blockchainService.canClaimFaucet(this.walletAddress);
-      if (!check.canClaim) {
+      if (!check.canClaim && check.timeLeft > 0) {
         const minutes = Math.floor(check.timeLeft / 60);
         const seconds = check.timeLeft % 60;
-        this.showNotification(`Veuillez patienter encore ${minutes}m ${seconds}s avant la prochaine réclamation.`, 'error');
+        this.showNotification(`⏳ Veuillez patienter encore ${minutes}m ${seconds}s avant la prochaine réclamation.`, 'error');
         return;
       }
 
@@ -177,12 +175,14 @@ export class App {
         type: 'faucet'
       };
 
-      this.showNotification(`Succès ! 10 UKT reçus.`, 'success');
+      this.showNotification(`🎉 Succès ! 10 UKT reçus sur votre compte.`, 'success');
     } catch (err: any) {
-      if (err.message && err.message.includes('cooldown')) {
-        this.showNotification('Veuillez attendre 2 minutes entre chaque réclamation.', 'error');
+      if (err.message && (err.message.includes('paused') || err.message.includes('EnforcedPause') || err.message.includes('execution reverted'))) {
+        this.showNotification('⚠️ Le contrat est actuellement EN PAUSE ou l\'action a échoué. Vérifiez l\'état du contrat.', 'error');
+      } else if (err.message && err.message.includes('user rejected')) {
+        this.showNotification('❌ Transaction annulée par l\'utilisateur dans MetaMask.', 'info');
       } else {
-        this.showNotification(`Erreur Faucet : ${err.message}`, 'error');
+        this.showNotification('⚠️ Impossible de réclamer le Faucet pour le moment.', 'error');
       }
     }
   }
@@ -209,7 +209,68 @@ export class App {
       this.transferAmount = '';
       this.showNotification(`Opération réussie sur la blockchain !`, 'success');
     } catch (err: any) {
-      this.showNotification(`Erreur lors de l'opération : ${err.message}`, 'error');
+      this.showNotification(`Erreur lors de l'opération : Le contrat est peut-être en pause ou le solde est insuffisant.`, 'error');
+    }
+  }
+
+  async pauseContract() {
+    try {
+      this.showNotification('Signature de la mise en pause dans MetaMask...', 'info');
+      const tx = await this.blockchainService.pauseContract();
+      
+      this.lastResult = {
+        title: 'Contrat Mis en Pause avec Succès !',
+        hash: tx.hash,
+        amount: 'GLOBAL',
+        type: 'send'
+      };
+
+      this.showNotification('⚠️ Le contrat est en pause : les transferts et faucets sont bloqués.', 'success');
+    } catch (err: any) {
+      this.showNotification(`Erreur (Rôle Admin requis) : ${err.message}`, 'error');
+    }
+  }
+
+  async unpauseContract() {
+    try {
+      this.showNotification('Signature de la réactivation dans MetaMask...', 'info');
+      const tx = await this.blockchainService.unpauseContract();
+      
+      this.lastResult = {
+        title: 'Contrat Réactivé avec Succès !',
+        hash: tx.hash,
+        amount: 'GLOBAL',
+        type: 'receive'
+      };
+
+      this.showNotification('✅ Le contrat est réactivé : les services refonctionnent normalement.', 'success');
+    } catch (err: any) {
+      this.showNotification(`Erreur de réactivation : ${err.message}`, 'error');
+    }
+  }
+
+  async claimVesting() {
+    try {
+      this.showNotification('Vérification des tokens disponibles pour le vesting...', 'info');
+      const tx = await this.blockchainService.claimVesting();
+      await this.refreshData();
+      
+      this.lastResult = {
+        title: 'Vesting Réclamé avec Succès !',
+        hash: tx.hash,
+        amount: 'Acquis',
+        type: 'faucet'
+      };
+
+      this.showNotification('🎉 Tokens du programme d\'acquisition récupérés !', 'success');
+    } catch (err: any) {
+      if (err.message && (err.message.includes('execution reverted') || err.message.includes('no tokens'))) {
+        this.showNotification('ℹ️ Aucun jeton n\'est actuellement disponible à la réclamation pour le vesting.', 'info');
+      } else if (err.message && err.message.includes('user rejected')) {
+        this.showNotification('❌ Réclamation annulée dans MetaMask.', 'info');
+      } else {
+        this.showNotification('⚠️ Aucun jeton débloqué pour le moment ou période de vesting en cours.', 'error');
+      }
     }
   }
 }

@@ -9,7 +9,9 @@
       <button (click)="switchTab('dashboard')" [class.active]="activeTab === 'dashboard'" class="nav-item">📊 Tableau de bord</button>
       <button (click)="switchTab('profile')" [class.active]="activeTab === 'profile'" class="nav-item">👤 Profil Étudiant</button>
       <button (click)="switchTab('transfer')" [class.active]="activeTab === 'transfer'" class="nav-item">💸 Paiements & Transferts</button>
-      <button (click)="switchTab('faucet')" [class.active]="activeTab === 'faucet'" class="nav-item">🎁 Faucet (Testnet)</button>
+      <button (click)="switchTab('faucet')" [class.active]="activeTab === 'faucet'" class="nav-item">🎁 Faucet (2 min)</button>
+      <button (click)="switchTab('vesting')" [class.active]="activeTab === 'vesting'" class="nav-item">⏳ Vesting & Équipe</button>
+      <button (click)="switchTab('admin')" [class.active]="activeTab === 'admin'" class="nav-item">⚙️ Admin / Pause</button>
     </nav>
 
     <div class="sidebar-footer">
@@ -53,7 +55,7 @@
       </div>
     </div>
 
-    <!-- Modale de Détails d'une Transaction (Clic sur une ligne) -->
+    <!-- Modale de Détails d'une Transaction -->
     <div *ngIf="selectedTransaction" class="modal-overlay">
       <div class="modal-card">
         <h3>🔍 Détails de la Transaction</h3>
@@ -71,7 +73,7 @@
       </div>
     </div>
 
-    <!-- Modale pour voir TOUTES les activités du compte -->
+    <!-- Modale Historique Complet -->
     <div *ngIf="showAllActivitiesModal" class="modal-overlay">
       <div class="modal-card" style="width: 600px; max-width: 90%;">
         <h3>📜 Toutes les Activités de {{ accountName }}</h3>
@@ -99,17 +101,16 @@
 
     <!-- Dashboard -->
     <div *ngIf="walletAddress" class="dashboard-views">
+      
+      <!-- ONGLET DASHBOARD -->
       <div *ngIf="activeTab === 'dashboard'" class="view-grid">
-        
-        <!-- Solde + Nom du compte affiché à côté -->
         <div class="card balance-card">
           <span class="card-label">Solde Total Disponible ({{ accountName }})</span>
           <h1 class="balance-display">{{ balance }} <span class="currency">UKT</span></h1>
           <span class="sub-text">Réseau Ethereum Sepolia</span>
         </div>
 
-        <!-- Activité du compte cliquable pour tout voir -->
-        <div class="card stats-card clickable-card" (click)="showAllActivitiesModal = true" title="Cliquez pour voir toutes les activités">
+        <div class="card stats-card clickable-card" (click)="showAllActivitiesModal = true">
           <span class="card-label">Activité du Compte (Cliquer pour tout voir)</span>
           <div class="stat-row">
             <span>Statut :</span> <strong style="color: #16a34a;">Sécurisé & Connecté</strong>
@@ -119,7 +120,6 @@
           </div>
         </div>
 
-        <!-- Graphique Temps Réel -->
         <div class="card full-width-card chart-container">
           <h3>📈 Évolution en temps réel des transactions (UKT)</h3>
           <p class="chart-subtitle">Graphique alimenté par les données réelles de la blockchain</p>
@@ -136,9 +136,8 @@
           </div>
         </div>
 
-        <!-- Historique récent (Cliquable pour voir les détails) -->
         <div class="card full-width-card">
-          <h3>Historique récent des transactions (Cliquez sur une ligne pour voir les détails)</h3>
+          <h3>Historique récent des transactions</h3>
           <div *ngIf="transactions.length === 0" class="empty-text">Aucune transaction enregistrée pour ce compte.</div>
           <div *ngFor="let tx of transactions" class="tx-row clickable" (click)="openTransactionDetails(tx)">
             <span class="tx-badge" [class]="tx.type">{{ tx.type | uppercase }}</span>
@@ -148,7 +147,7 @@
         </div>
       </div>
 
-      <!-- PROFIL ÉTUDIANT -->
+      <!-- ONGLET PROFIL ÉTUDIANT -->
       <div *ngIf="activeTab === 'profile'" class="card single-card">
         <h3>Enregistrement du Profil Étudiant</h3>
         <div *ngIf="!isRegistered">
@@ -174,7 +173,7 @@
         </div>
       </div>
 
-      <!-- PAIEMENTS / TRANSFERTS (Photocopie, Bibliothèque, etc.) -->
+      <!-- ONGLET PAIEMENTS / TRANSFERTS -->
       <div *ngIf="activeTab === 'transfer'" class="card single-card">
         <h3>Paiement & Transfert (Bibliothèque, Photocopies...)</h3>
         <div class="form-group">
@@ -194,9 +193,9 @@
         </div>
       </div>
 
-      <!-- FAUCET -->
+      <!-- ONGLET FAUCET -->
       <div *ngIf="activeTab === 'faucet'" class="card single-card text-center">
-        <h3>Faucet Testnet UKT</h3>
+        <h3>🎁 Faucet Testnet UKT (Délai : 2 minutes)</h3>
         <p class="desc-text">Réclamez vos tokens de test (10 UKT par demande, délai de 2 minutes).</p>
         <button (click)="claimFaucet()" class="btn-orange-large">🎁 Réclamer le Faucet</button>
 
@@ -206,6 +205,24 @@
           <p class="hash-text"><strong>Hash :</strong> {{ lastResult.hash }}</p>
         </div>
       </div>
+
+      <!-- ONGLET VESTING -->
+      <div *ngIf="activeTab === 'vesting'" class="card single-card">
+        <h3>⏳ Programme d'Acquisition (Vesting)</h3>
+        <p class="desc-text">Récupérez progressivement vos jetons réservés au fil du temps.</p>
+        <button (click)="claimVesting()" class="btn-orange">Réclamer mes Jetons Débloqués</button>
+      </div>
+
+      <!-- ONGLET SÉCURITÉ / ADMIN (PAUSE) -->
+      <div *ngIf="activeTab === 'admin'" class="card single-card">
+        <h3>⚙️ Contrôle Administrateur (Pause & Urgence)</h3>
+        <p class="desc-text">Mettez en pause ou réactivez les transactions globales du contrat en cas d'urgence.</p>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button (click)="pauseContract()" class="btn-orange" style="background: #dc2626;">Mettre en Pause</button>
+          <button (click)="unpauseContract()" class="btn-orange" style="background: #16a34a;">Réactiver le Contrat</button>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
